@@ -3,7 +3,7 @@
 
 ## Getting Started
 
-Tested on Ubuntu 16.04 with Python 3.5, TensorFlow 1.4.0
+Tested on Ubuntu 16.04 with Python 3.5, TensorFlow 1.4.0 and 1.10.1.
 
 ### Installation
 
@@ -15,10 +15,14 @@ cd license-plates
 
 Inside your virtual environment install required packages.
 ```bash
-pip install -e requirements.txt
+pip install -r requirements.txt
 ```
 
-Download trained model to a directory of choice.
+[Download trained model](https://faui1-files.cs.fau.de/public/mmsec/license-plates/license-plates-trained-model.zip) trained model to `<repo>/model` or a directory of your choice.
+```bash
+wget https://faui1-files.cs.fau.de/public/mmsec/license-plates/license-plates-trained-model.zip
+unzip license-plates-trained-model.zip -d model
+```
 
 ### Running the demo
 ```bash
@@ -36,3 +40,7 @@ Depending on the location of the trained weights, you may need to update the pat
 ![Arizona license plate](assets/arizona_example.png "Arizona license plate")
 
 ![Vermont license plate](assets/vermont_example.png "Vermont license plate")
+
+### CNN architecture
+
+![CNN architecture](assets/cnn_architecture.png "CNN architecture")
