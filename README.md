@@ -43,4 +43,6 @@ Depending on the location of the trained weights, you may need to update the pat
 
 ### CNN architecture
 
+(View image to enlarge)
+
 ![CNN architecture](assets/cnn_architecture.png "CNN architecture")

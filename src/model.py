@@ -8,7 +8,7 @@ import time
 import os
 
 
-log = setup_custom_logger("DefendingChampionCNN")
+log = setup_custom_logger("LicensePlatesCNN")
 
 
 # Some string constants
