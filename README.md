@@ -18,7 +18,7 @@ Inside your virtual environment install required packages.
 pip install -r requirements.txt
 ```
 
-[Download trained model](https://faui1-files.cs.fau.de/public/mmsec/license-plates/license-plates-trained-model.zip) trained model to `<repo>/model` or a directory of your choice.
+[Download trained model](https://faui1-files.cs.fau.de/public/mmsec/license-plates/license-plates-trained-model.zip) to `<repo>/model` or a directory of your choice.
 ```bash
 wget https://faui1-files.cs.fau.de/public/mmsec/license-plates/license-plates-trained-model.zip
 unzip license-plates-trained-model.zip -d model
