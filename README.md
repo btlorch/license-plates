@@ -41,7 +41,7 @@ Depending on the location of the trained weights, you may need to update the pat
 
 ![Vermont license plate](assets/vermont_example.png "Vermont license plate")
 
-### CNN architecture
+## CNN architecture
 
 (View image to enlarge)
 
