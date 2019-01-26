@@ -1,5 +1,14 @@
 # Forensic Reconstruction of Severely Degraded License Plates
 
+Code and pretrained *Real-world* CNN model for:
+
+```
+Benedikt Lorch, Shruti Agarwal, Hany Farid. Forensic Reconstruction of Severely Degraded License Plates.
+Media Watermarking, Security, and Forensics 2019, Burlingame, CA, USA, MWSF-529.
+```
+
+[bibtex](http://cris.fau.de/bibtex/publication/209464175.bib)
+
 
 ## Getting Started
 
