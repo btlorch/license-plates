@@ -6,6 +6,8 @@ import numpy as np
 import h5py
 import time
 import os
+tf.compat.v1.disable_eager_execution()
+
 
 
 log = setup_custom_logger("LicensePlatesCNN")
@@ -106,11 +108,11 @@ class LicensePlatesCNN(object):
 
     def _build_model(self):
         # Input 100x50 images
-        self._images = tf.placeholder(tf.float32, [None, 50, 100, self._input_channels], name="images")
+        self._images = tf.compat.v1.placeholder(tf.float32, [None, 50, 100, self._input_channels], name="images")
         # Placeholder for output labels of size batch_size x num_characters x num_distinct_characters (including null chararacter)
-        self._char_labels = tf.placeholder(tf.float32, [None, self._max_length, self._num_distinct_chars + 1], name="char_labels")
+        self._char_labels = tf.compat.v1.placeholder(tf.float32, [None, self._max_length, self._num_distinct_chars + 1], name="char_labels")
         # Dropout probability
-        self._drop_rate = tf.placeholder(tf.float32, name="drop_rate")
+        self._drop_rate = tf.compat.v1.placeholder(tf.float32, name="drop_rate")
         # Set up computational graph
         self._output, self._output_logits = self.model(self._images)
 
@@ -118,7 +120,7 @@ class LicensePlatesCNN(object):
         self._set_up_eval_vars_and_ops()
 
         # Saving only relative paths is particularly useful when we copy a saved model to another machine
-        self._saver = tf.train.Saver(max_to_keep=1, save_relative_paths=True)
+        self._saver = tf.compat.v1.train.Saver(max_to_keep=1, save_relative_paths=True)
 
     def _set_up_eval_vars_and_ops(self):
         """
@@ -130,17 +132,17 @@ class LicensePlatesCNN(object):
         # Since we know the maximum length of the license numbers in advance, we can set up one tf.nn.in_top_k method for each character and stack the results
         char_top_k_accuracies = []
         for i in range(self._max_length):
-            with tf.variable_scope("char_{:d}".format(i)):
-                class_ids_vector = tf.argmax(self._char_labels[:, i, :], axis=1)
+            with tf.compat.v1.variable_scope("char_{:d}".format(i)):
+                class_ids_vector = tf.argmax(input=self._char_labels[:, i, :], axis=1)
                 top_k_accuracy = tf.nn.in_top_k(predictions=self._output[:, i, :], targets=class_ids_vector, k=self._report_accuracy_top_k)
                 char_top_k_accuracies.append(top_k_accuracy)
 
         # Stack per-character results and average over all characters for each sample
-        char_top_k_accuracies = tf.reduce_mean(tf.cast(tf.stack(char_top_k_accuracies, axis=1), tf.float32), axis=1)
+        char_top_k_accuracies = tf.reduce_mean(input_tensor=tf.cast(tf.stack(char_top_k_accuracies, axis=1), tf.float32), axis=1)
 
         # Per character top k accuracy for each sample
         self._char_top_k_accuracies_samplewise = char_top_k_accuracies
-        self._char_top_k_accuracies_mean = tf.reduce_mean(char_top_k_accuracies)
+        self._char_top_k_accuracies_mean = tf.reduce_mean(input_tensor=char_top_k_accuracies)
 
     def model(self, input):
         """
@@ -150,14 +152,14 @@ class LicensePlatesCNN(object):
         """
 
         # (50, 100, 1) -> (50, 100, 64)
-        with tf.variable_scope("conv0"):
+        with tf.compat.v1.variable_scope("conv0"):
             conv0_weights = weights_variable_xavier([3, 3, self._input_channels, 64], name=CONV0_WEIGHTS)
             conv0_bias = bias_variable([64], value=0.1, name=CONV0_BIAS)
             conv0_z = conv2d(input, conv0_weights) + conv0_bias
             conv0_a = tf.nn.relu(conv0_z)
 
         # (50, 100, 64) -> (50, 100, 64)
-        with tf.variable_scope("conv1"):
+        with tf.compat.v1.variable_scope("conv1"):
             conv1_weights = weights_variable_xavier([3, 3, 64, 64], name=CONV1_WEIGHTS)
             conv1_bias = bias_variable([64], value=0.1, name=CONV1_BIAS)
             conv1_z = conv2d(conv0_a, conv1_weights) + conv1_bias
@@ -165,121 +167,121 @@ class LicensePlatesCNN(object):
 
         # (50, 100, 64) -> (25, 50, 64)
         # TODO does variable_scope make sense if pooling layers don't even have variables?
-        with tf.variable_scope("pool0"):
-            pool0 = tf.layers.max_pooling2d(conv1_a, pool_size=[2, 2], strides=2, padding="same")
+        with tf.compat.v1.variable_scope("pool0"):
+            pool0 = tf.compat.v1.layers.max_pooling2d(conv1_a, pool_size=[2, 2], strides=2, padding="same")
 
         # (25, 50, 64) -> (25, 50, 128)
-        with tf.variable_scope("conv2"):
+        with tf.compat.v1.variable_scope("conv2"):
             conv2_weights = weights_variable_xavier([3, 3, 64, 128], name=CONV2_WEIGHTS)
             conv2_bias = bias_variable([128], value=0.1, name=CONV2_BIAS)
             conv2_z = conv2d(pool0, conv2_weights) + conv2_bias
             conv2_a = tf.nn.relu(conv2_z)
 
         # (25, 50, 128) -> (25, 50, 128)
-        with tf.variable_scope("conv3"):
+        with tf.compat.v1.variable_scope("conv3"):
             conv3_weights = weights_variable_xavier([3, 3, 128, 128], name=CONV3_WEIGHTS)
             conv3_bias = bias_variable([128], value=0.1, name=CONV3_BIAS)
             conv3_z = conv2d(conv2_a, conv3_weights) + conv3_bias
             conv3_a = tf.nn.relu(conv3_z)
 
         # (25, 50, 128) -> (25, 50, 128)
-        with tf.variable_scope("pool1"):
-            pool1 = tf.layers.max_pooling2d(conv3_a, pool_size=[2, 2], strides=1, padding="same")
+        with tf.compat.v1.variable_scope("pool1"):
+            pool1 = tf.compat.v1.layers.max_pooling2d(conv3_a, pool_size=[2, 2], strides=1, padding="same")
 
         # (25, 50, 128) -> (25, 50, 256)
-        with tf.variable_scope("conv4"):
+        with tf.compat.v1.variable_scope("conv4"):
             conv4_weights = weights_variable_xavier([3, 3, 128, 256], name=CONV4_WEIGHTS)
             conv4_bias = bias_variable([256], value=0.1, name=CONV4_BIAS)
             conv4_z = conv2d(pool1, conv4_weights) + conv4_bias
             conv4_a = tf.nn.relu(conv4_z)
 
         # (25, 50, 256) -> (25, 50, 256)
-        with tf.variable_scope("conv5"):
+        with tf.compat.v1.variable_scope("conv5"):
             conv5_weights = weights_variable_xavier([3, 3, 256, 256], name=CONV5_WEIGHTS)
             conv5_bias = bias_variable([256], value=0.1, name=CONV5_BIAS)
             conv5_z = conv2d(conv4_a, conv5_weights) + conv5_bias
             conv5_a = tf.nn.relu(conv5_z)
 
         # (25, 50, 256) -> (13, 25, 256)
-        with tf.variable_scope("pool2"):
-            pool2 = tf.layers.max_pooling2d(conv5_a, pool_size=[2, 2], strides=2, padding="same")
+        with tf.compat.v1.variable_scope("pool2"):
+            pool2 = tf.compat.v1.layers.max_pooling2d(conv5_a, pool_size=[2, 2], strides=2, padding="same")
 
         # (13, 25, 256) -> (13, 25, 512)
-        with tf.variable_scope("conv6"):
+        with tf.compat.v1.variable_scope("conv6"):
             conv6_weights = weights_variable_xavier([3, 3, 256, 512], name=CONV6_WEIGHTS)
             conv6_bias = bias_variable([512], value=0.1, name=CONV6_BIAS)
             conv6_z = conv2d(pool2, conv6_weights) + conv6_bias
             conv6_a = tf.nn.relu(conv6_z)
 
         # (13, 25, 512) -> (13, 25, 512)
-        with tf.variable_scope("pool3"):
-            pool3 = tf.layers.max_pooling2d(conv6_a, pool_size=[2, 2], strides=1, padding="same")
+        with tf.compat.v1.variable_scope("pool3"):
+            pool3 = tf.compat.v1.layers.max_pooling2d(conv6_a, pool_size=[2, 2], strides=1, padding="same")
 
         # (13, 25, 512) -> (13, 25, 512)
-        with tf.variable_scope("conv7"):
+        with tf.compat.v1.variable_scope("conv7"):
             conv7_weights = weights_variable_xavier([3, 3, 512, 512], name=CONV7_WEIGHTS)
             conv7_bias = bias_variable([512], value=0.1, name=CONV7_BIAS)
             conv7_z = conv2d(pool3, conv7_weights) + conv7_bias
             conv7_a = tf.nn.relu(conv7_z)
 
         # (13, 25, 512) -> (7, 13, 512)
-        with tf.variable_scope("pool4"):
-            pool4 = tf.layers.max_pooling2d(conv7_a, pool_size=[2, 2], strides=2, padding="same")
+        with tf.compat.v1.variable_scope("pool4"):
+            pool4 = tf.compat.v1.layers.max_pooling2d(conv7_a, pool_size=[2, 2], strides=2, padding="same")
 
         flatten = tf.reshape(pool4, [-1, 7 * 13 * 512])
 
-        with tf.variable_scope("fc0"):
+        with tf.compat.v1.variable_scope("fc0"):
             fc0_weights = weights_variable_truncated_normal([7 * 13 * 512, 1024], stddev=0.005, name=FC0_WEIGHTS)
             fc0_bias = bias_variable([1024], value=0.1, name=FC0_BIAS)
             fc0_z = tf.matmul(flatten, fc0_weights) + fc0_bias
             fc0_a = tf.nn.relu(fc0_z)
-            dropout_0 = tf.layers.dropout(fc0_a, rate=self._drop_rate)
+            dropout_0 = tf.compat.v1.layers.dropout(fc0_a, rate=self._drop_rate)
 
-        with tf.variable_scope("fc1"):
+        with tf.compat.v1.variable_scope("fc1"):
             fc1_weights = weights_variable_truncated_normal([1024, 2048], stddev=0.005, name=FC1_WEIGHTS)
             fc1_bias = bias_variable([2048], value=0.1, name=FC1_BIAS)
             fc1_z = tf.matmul(dropout_0, fc1_weights) + fc1_bias
             fc1_a = tf.nn.relu(fc1_z)
-            dropout_1 = tf.layers.dropout(fc1_a, rate=self._drop_rate)
+            dropout_1 = tf.compat.v1.layers.dropout(fc1_a, rate=self._drop_rate)
 
         # Output layers
-        with tf.variable_scope("char0"):
+        with tf.compat.v1.variable_scope("char0"):
             char0_weights = weights_variable_xavier([2048, self._num_distinct_chars + 1], name=FC_CHAR0_WEIGHTS)
             char0_bias = bias_variable([self._num_distinct_chars + 1], name=FC_CHAR0_BIAS)
             char0_logits = tf.matmul(dropout_1, char0_weights) + char0_bias
             char0_out = tf.nn.softmax(char0_logits)
 
-        with tf.variable_scope("char1"):
+        with tf.compat.v1.variable_scope("char1"):
             char1_weights = weights_variable_xavier([2048, self._num_distinct_chars + 1], name=FC_CHAR1_WEIGHTS)
             char1_bias = bias_variable([self._num_distinct_chars + 1], name=FC_CHAR1_BIAS)
             char1_logits = tf.matmul(dropout_1, char1_weights) + char1_bias
             char1_out = tf.nn.softmax(char1_logits)
 
-        with tf.variable_scope("char2"):
+        with tf.compat.v1.variable_scope("char2"):
             char2_weights = weights_variable_xavier([2048, self._num_distinct_chars + 1], name=FC_CHAR2_WEIGHTS)
             char2_bias = bias_variable([self._num_distinct_chars + 1], name=FC_CHAR2_BIAS)
             char2_logits = tf.matmul(dropout_1, char2_weights) + char2_bias
             char2_out = tf.nn.softmax(char2_logits)
 
-        with tf.variable_scope("char3"):
+        with tf.compat.v1.variable_scope("char3"):
             char3_weights = weights_variable_xavier([2048, self._num_distinct_chars + 1], name=FC_CHAR3_WEIGHTS)
             char3_bias = bias_variable([self._num_distinct_chars + 1], name=FC_CHAR3_BIAS)
             char3_logits = tf.matmul(dropout_1, char3_weights) + char3_bias
             char3_out = tf.nn.softmax(char3_logits)
 
-        with tf.variable_scope("char4"):
+        with tf.compat.v1.variable_scope("char4"):
             char4_weights = weights_variable_xavier([2048, self._num_distinct_chars + 1], name=FC_CHAR4_WEIGHTS)
             char4_bias = bias_variable([self._num_distinct_chars + 1], name=FC_CHAR4_BIAS)
             char4_logits = tf.matmul(dropout_1, char4_weights) + char4_bias
             char4_out = tf.nn.softmax(char4_logits)
 
-        with tf.variable_scope("char5"):
+        with tf.compat.v1.variable_scope("char5"):
             char5_weights = weights_variable_xavier([2048, self._num_distinct_chars + 1], name=FC_CHAR5_WEIGHTS)
             char5_bias = bias_variable([self._num_distinct_chars + 1], name=FC_CHAR5_BIAS)
             char5_logits = tf.matmul(dropout_1, char5_weights) + char5_bias
             char5_out = tf.nn.softmax(char5_logits)
 
-        with tf.variable_scope("char6"):
+        with tf.compat.v1.variable_scope("char6"):
             char6_weights = weights_variable_xavier([2048, self._num_distinct_chars + 1], name=FC_CHAR6_WEIGHTS)
             char6_bias = bias_variable([self._num_distinct_chars + 1], name=FC_CHAR6_BIAS)
             char6_logits = tf.matmul(dropout_1, char6_weights) + char6_bias
@@ -358,15 +360,15 @@ class LicensePlatesCNN(object):
         """
         var_variable = self._weight_vars[var_name]
 
-        with tf.name_scope("{}_summary".format(var_name)):
-            mean = tf.reduce_mean(var_variable)
-            mean_summary = tf.summary.scalar("mean", mean)
-            with tf.name_scope("stddev"):
-                stddev = tf.sqrt(tf.reduce_mean(tf.square(var_variable - mean)))
-            stddev_summary = tf.summary.scalar("stddev", stddev)
-            max_summary = tf.summary.scalar("max", tf.reduce_max(var_variable))
-            min_summary = tf.summary.scalar("min", tf.reduce_min(var_variable))
-            histogram_summary = tf.summary.histogram("histogram", var_variable)
+        with tf.compat.v1.name_scope("{}_summary".format(var_name)):
+            mean = tf.reduce_mean(input_tensor=var_variable)
+            mean_summary = tf.compat.v1.summary.scalar("mean", mean)
+            with tf.compat.v1.name_scope("stddev"):
+                stddev = tf.sqrt(tf.reduce_mean(input_tensor=tf.square(var_variable - mean)))
+            stddev_summary = tf.compat.v1.summary.scalar("stddev", stddev)
+            max_summary = tf.compat.v1.summary.scalar("max", tf.reduce_max(input_tensor=var_variable))
+            min_summary = tf.compat.v1.summary.scalar("min", tf.reduce_min(input_tensor=var_variable))
+            histogram_summary = tf.compat.v1.summary.histogram("histogram", var_variable)
 
             return [mean_summary, stddev_summary, max_summary, min_summary, histogram_summary]
 
@@ -390,50 +392,50 @@ class LicensePlatesCNN(object):
 
         # Divide into batches
         batched_dataset = dataset.batch(self._training_batch_size)
-        iterator = batched_dataset.make_initializable_iterator()
+        iterator = tf.compat.v1.data.make_initializable_iterator(batched_dataset)
         next_element_op = iterator.get_next()
 
         # Fetch the output units
         char_logits = self._output_logits
-        with tf.name_scope("loss"):
-            char0_cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self._char_labels[:, 0], logits=char_logits[:, 0, :]))
-            char1_cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self._char_labels[:, 1], logits=char_logits[:, 1, :]))
-            char2_cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self._char_labels[:, 2], logits=char_logits[:, 2, :]))
-            char3_cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self._char_labels[:, 3], logits=char_logits[:, 3, :]))
-            char4_cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self._char_labels[:, 4], logits=char_logits[:, 4, :]))
-            char5_cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self._char_labels[:, 5], logits=char_logits[:, 5, :]))
-            char6_cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self._char_labels[:, 6], logits=char_logits[:, 6, :]))
+        with tf.compat.v1.name_scope("loss"):
+            char0_cross_entropy = tf.reduce_mean(input_tensor=tf.nn.softmax_cross_entropy_with_logits(labels=tf.stop_gradient(self._char_labels[:, 0]), logits=char_logits[:, 0, :]))
+            char1_cross_entropy = tf.reduce_mean(input_tensor=tf.nn.softmax_cross_entropy_with_logits(labels=tf.stop_gradient(self._char_labels[:, 1]), logits=char_logits[:, 1, :]))
+            char2_cross_entropy = tf.reduce_mean(input_tensor=tf.nn.softmax_cross_entropy_with_logits(labels=tf.stop_gradient(self._char_labels[:, 2]), logits=char_logits[:, 2, :]))
+            char3_cross_entropy = tf.reduce_mean(input_tensor=tf.nn.softmax_cross_entropy_with_logits(labels=tf.stop_gradient(self._char_labels[:, 3]), logits=char_logits[:, 3, :]))
+            char4_cross_entropy = tf.reduce_mean(input_tensor=tf.nn.softmax_cross_entropy_with_logits(labels=tf.stop_gradient(self._char_labels[:, 4]), logits=char_logits[:, 4, :]))
+            char5_cross_entropy = tf.reduce_mean(input_tensor=tf.nn.softmax_cross_entropy_with_logits(labels=tf.stop_gradient(self._char_labels[:, 5]), logits=char_logits[:, 5, :]))
+            char6_cross_entropy = tf.reduce_mean(input_tensor=tf.nn.softmax_cross_entropy_with_logits(labels=tf.stop_gradient(self._char_labels[:, 6]), logits=char_logits[:, 6, :]))
             loss = char0_cross_entropy + char1_cross_entropy + char2_cross_entropy + char3_cross_entropy + char4_cross_entropy + char5_cross_entropy + char6_cross_entropy
 
         # Set up optimizer
-        with tf.name_scope("optimizer"):
+        with tf.compat.v1.name_scope("optimizer"):
             global_step = tf.Variable(0, name="global_step", trainable=False)
-            learning_rate = tf.train.exponential_decay(1e-2, global_step=global_step, decay_steps=num_batches, decay_rate=0.9, staircase=True)
-            optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+            learning_rate = tf.compat.v1.train.exponential_decay(1e-2, global_step=global_step, decay_steps=num_batches, decay_rate=0.9, staircase=True)
+            optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate)
             train_op = optimizer.minimize(loss, global_step=global_step)
 
         # Summary
-        loss_summary = tf.summary.scalar("loss", loss)
-        learning_rate_summary = tf.summary.scalar("learning_rate", learning_rate)
+        loss_summary = tf.compat.v1.summary.scalar("loss", loss)
+        learning_rate_summary = tf.compat.v1.summary.scalar("learning_rate", learning_rate)
 
         # Show statistics for each of our weight variables on TensorBoard
         training_summary_tensors = []
         for var_name in self._weight_vars.keys():
             summary_tensors = self.variable_summaries(var_name)
             training_summary_tensors.extend(summary_tensors)
-        summary_op = tf.summary.merge([loss_summary, learning_rate_summary] + training_summary_tensors)
+        summary_op = tf.compat.v1.summary.merge([loss_summary, learning_rate_summary] + training_summary_tensors)
 
         # Prepare paths for summaries
         summary_dir_name = time.strftime("%Y_%m_%d_%H_%M_%S") + "-" + self._model_name
         training_summary_dir = os.path.join(self._summary_dir, summary_dir_name, "training")
         validation_summary_dir = os.path.join(self._summary_dir, summary_dir_name, "validation")
         # Create two different summary writers to give statistics on training and validation images
-        training_summary_writer = tf.summary.FileWriter(training_summary_dir, graph=self._sess.graph)
+        training_summary_writer = tf.compat.v1.summary.FileWriter(training_summary_dir, graph=self._sess.graph)
         # Set up evaluation summary writer without graph to avoid overlap with training graph
-        self._eval_summary_writer = tf.summary.FileWriter(validation_summary_dir)
+        self._eval_summary_writer = tf.compat.v1.summary.FileWriter(validation_summary_dir)
 
         # Start the training
-        self._sess.run(tf.global_variables_initializer())
+        self._sess.run(tf.compat.v1.global_variables_initializer())
 
         # Restore model checkpoint
         if self.load():
@@ -518,7 +520,7 @@ class LicensePlatesCNN(object):
 
         # Divide data set into batches
         batched_dataset = dataset.batch(batch_size)
-        iterator = batched_dataset.make_initializable_iterator()
+        iterator = tf.compat.v1.data.make_initializable_iterator(batched_dataset)
         next_element_op = iterator.get_next()
 
         # Set up writer to store predictions
@@ -564,7 +566,7 @@ class LicensePlatesCNN(object):
 
             except tf.errors.OutOfRangeError:
                 top_k_accuracy = np.mean(np.concatenate(top_k_accuracies))
-                summary = tf.Summary()
+                summary = tf.compat.v1.Summary()
                 summary.value.add(tag="accuracy", simple_value=top_k_accuracy)
 
                 # Write evaluation summary if evaluation summary writer was set up (which it is during training)

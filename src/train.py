@@ -12,7 +12,7 @@ parser.add_argument("--checkpoint_dir", type=str, help="Directory where to store
 parser.add_argument("--summary_dir", type=str, help="Directory where to store summary", default="summary")
 args = vars(parser.parse_args())
 
-with tf.Session() as sess:
+with tf.compat.v1.Session() as sess:
     cnn = LicensePlatesCNN(sess,
                            args["checkpoint_dir"],
                            args["summary_dir"],

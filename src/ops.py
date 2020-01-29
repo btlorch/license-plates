@@ -5,14 +5,14 @@ def conv2d(x, W):
     """
     Returns a 2D convolutional layer with full stride.
     """
-    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding="SAME")
+    return tf.nn.conv2d(input=x, filters=W, strides=[1, 1, 1, 1], padding="SAME")
 
 
 def max_pool_2x2(x):
     """
     Max-pooling over 2x2 blocks
     """
-    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
+    return tf.nn.max_pool2d(input=x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
 
 
 def weights_variable_truncated_normal(shape, mean=0.0, stddev=0.1, name=None, trainable=True):
@@ -28,7 +28,7 @@ def weights_variable_truncated_normal(shape, mean=0.0, stddev=0.1, name=None, tr
         the default list of variables to use by the `Optimizer` classes.
     :return: Weight matrix
     """
-    initial = tf.truncated_normal(shape, mean=mean, stddev=stddev)
+    initial = tf.random.truncated_normal(shape, mean=mean, stddev=stddev)
     return tf.Variable(initial, trainable=trainable, name=name)
 
 
@@ -43,7 +43,7 @@ def weights_variable_xavier(shape, name, trainable=True):
         the default list of variables to use by the `Optimizer` classes.
     :return: Weight matrix
     """
-    return tf.get_variable(name, shape=shape, initializer=tf.contrib.layers.xavier_initializer(), trainable=trainable)
+    return tf.compat.v1.get_variable(name, shape=shape, initializer=tf.compat.v1.keras.initializers.VarianceScaling(scale=1.0, mode="fan_avg", distribution="uniform"), trainable=trainable)
 
 
 def bias_variable(shape, value=0, name=None, trainable=True):
