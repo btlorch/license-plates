@@ -9,7 +9,7 @@ log = setup_custom_logger(os.path.basename(__file__))
 
 
 def eval(test_data, store_results_path, input_channels=3, checkpoint_dir="checkpoint", summary_dir="summary"):
-    with tf.Session() as sess:
+    with tf.compat.v1.Session() as sess:
         cnn = LicensePlatesCNN(sess=sess,
                                checkpoint_dir=checkpoint_dir,
                                summary_dir=summary_dir,
