@@ -43,9 +43,19 @@ pip install -r requirements.txt
 
 [Download trained model](https://faui1-files.cs.fau.de/public/mmsec/license-plates/license-plates-trained-model.zip) to `<repo>/model` or a directory of your choice.
 
-[Alternate link to trained model](https://drive.google.com/file/d/1fxUeKGdr7n9apFEw3YZvZMFnWKIi6Yb_/view?usp=sharing)
+[Alternate link to trained model](https://cs.iusb.edu/~csolovey/license-plates/license-plates-trained-model.zip)
 ```bash
 wget https://faui1-files.cs.fau.de/public/mmsec/license-plates/license-plates-trained-model.zip
+```
+
+### File verification on trained model download
+```bash
+shasum -a 256 license-plates-trained-model.zip 
+	ec2fad6f73e123e181780476b6e36b34228efde475fa1e053c45bd2a17234536  license-plates-trained-model.zip
+```
+
+### Unzip trained model to model directory
+```bash
 unzip license-plates-trained-model.zip -d model
 ```
 
